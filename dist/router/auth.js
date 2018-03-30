@@ -33,6 +33,8 @@ module.exports = function (app) {
                 phone: req.body.phone,
                 idJOBS: req.body.job,
                 idDEPT: req.body.dept,
+                password_q: req.body.password_q,
+                password_a: req.body.password_a,
                 status: 0,
                 license_path: '',
                 join_date: null,

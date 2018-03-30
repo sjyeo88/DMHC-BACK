@@ -12,5 +12,7 @@ export interface UserDATA {
   join_date:[string, undefined],
   last_login_date:string,
   salt:string,
+  password_a:string,
+  password_q:number,
   // file:any[]
 }
