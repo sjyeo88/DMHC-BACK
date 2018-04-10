@@ -25,7 +25,6 @@ module.exports = function (app) {
     router.get("con");
     router.post("/local/register", (req, res) => {
         hasher({ password: req.body.password }, (err, pass, salt, hash) => {
-	console.log(req.body);
             let user = {
                 idEXPERT_USER: undefined,
                 email: req.body.email,
