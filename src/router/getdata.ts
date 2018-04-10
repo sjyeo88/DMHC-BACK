@@ -1712,7 +1712,7 @@ app.conn.query(Q, (err, result)=>{
         + ' PATIENT_USER.LAST_LOGIN_DATE, '
         + ' PATIENT_USER.JOIN_DATE, '
         + ' (SELECT count(idSBJTS) FROM SBJTS WHERE idPATIENT_USER=PATIENT_USER.idPATIENT_USER) as all_sbjt, '
-        + ' (SELECT count(result) FROM SBJTS WHERE idPATIENT_USER=PATIENT_USER.idPATIENT_USER and result=1) as fin_sbjt '
+        + ' (SELECT count(status) FROM SBJTS WHERE idPATIENT_USER=PATIENT_USER.idPATIENT_USER and status=1) as fin_sbjt '
         + ' FROM DMHC.PATIENT_USER '
         + ' WHERE idEXPERT_USER = ' + mysql.escape(req.user.idEXPERT_USER)
         app.conn.query(Q, (err, result)=>{
