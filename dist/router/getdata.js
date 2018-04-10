@@ -624,7 +624,7 @@ module.exports = function (app) {
     router.get("/hash/name/:name", ensureAuthenticated, (req, res) => {
         let Q = " SELECT COUNT(idHASH_SUB) as COUNT FROM HASH_SUB ";
         Q += " JOIN (SELECT dece FROM HASH_TREE WHERE ance = ";
-        Q += " (SELECT idHASH FROM HASH WHERE name = " + mysql.escape(req.params.name);
+        Q += " (SELECT idHASH FROM HASH WHERE name = " + mysql.escape('#' + req.params.name);
         Q += " AND idEXPERT_USER = " + mysql.escape(req.user.idEXPERT_USER) + ")) as HASHES ";
         Q += " ON HASH_SUB.idHASH = HASHES.dece ";
         app.conn.query(Q, (err, result) => {
@@ -1352,7 +1352,7 @@ module.exports = function (app) {
             + " WHERE "
             + " SURVEY_RESULT.idPATIENT_USER = " + mysql.escape(req.params.idPATIENT_USER)
             + " AND SURVEY_CONF.idEXPERT_USER = " + mysql.escape(req.user.idEXPERT_USER)
-            + " AND SBJTS.result = " + mysql.escape(1)
+            + " AND SBJTS.status = " + mysql.escape(1)
             + " AND SBJTS.PUSH_TIME BETWEEN '" + req.params.year
             + "-01-01' AND '" + req.params.year + "-12-31' "
             + " ORDER BY PUSH_TIME DESC ";
@@ -1394,7 +1394,7 @@ module.exports = function (app) {
             + " SBJT_CONF_ALL.title as groupName, "
             + " SB_SBJT_CONF.title as title, "
             + " SBJTS.command, "
-            + " SBJTS.result, "
+            + " SBJTS.status, "
             + " SBJTS.PUSH_TIME "
             + " FROM DMHC.SBJTS "
             + " JOIN SB_SBJT_CONF "
