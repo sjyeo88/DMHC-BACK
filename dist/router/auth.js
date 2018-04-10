@@ -10,6 +10,7 @@ const config_1 = require("../configure/config");
 const html_service_1 = require("../service/html-service");
 let LocalStrategy = require("passport-local");
 let FaceboockStrategy = require("passport-facebook");
+let passwdGen = require('generate-password');
 let router = express.Router();
 let hasher = pbkdf2Password();
 let mysql = require('mysql');
@@ -215,7 +216,8 @@ module.exports = function (app) {
                 hasher(hashInfo, (err, pass, salt, hash) => {
                     if (hash === result1[0].password) {
                         let Q2 = ' UPDATE EXPERT_USER '
-                            + 'SET email = ' + mysql.escape(req.body.email);
+                            + ' SET email = ' + mysql.escape(req.body.email);
+                        +' WHERE idEXPERT_USER = ' + mysql.escape(req.user.idEXPERT_USER);
                         app.conn.query(Q2, (err2, result2) => {
                             if (err2)
                                 res.status(500).send(err1);
@@ -274,7 +276,8 @@ module.exports = function (app) {
                 hasher(hashInfo, (err, pass, salt, hash) => {
                     if (hash === result1[0].password) {
                         let Q2 = ' UPDATE EXPERT_USER '
-                            + 'SET idDEPT = ' + mysql.escape(req.body.dept);
+                            + ' SET idDEPT = ' + mysql.escape(req.body.dept);
+                        +' WHERE idEXPERT_USER = ' + mysql.escape(req.user.idEXPERT_USER);
                         app.conn.query(Q2, (err2, result2) => {
                             if (err2)
                                 res.status(500).send(err1);
@@ -336,6 +339,40 @@ module.exports = function (app) {
             });
         });
     });
+    router.put("/user/password", ensureAuthenticated, (req, res) => {
+        let Q1 = ' SELECT idDEPT, password, salt FROM EXPERT_USER '
+            + ' WHERE idEXPERT_USER = ' + mysql.escape(req.user.idEXPERT_USER);
+        app.conn.query(Q1, (err1, result1) => {
+            if (err1) {
+                console.log(err1);
+                console.log(Q1);
+                res.status(500).send(err1);
+            }
+            else {
+                let hashInfo = { password: req.body.password, salt: result1[0].salt };
+                hasher(hashInfo, (err, pass, salt, hash) => {
+                    if (hash === result1[0].password) {
+                        let hashInfo2 = { password: req.body.newPassword };
+                        hasher(hashInfo2, (err2, pass2, salt2, hash2) => {
+                            let Q2 = ' UPDATE EXPERT_USER SET ';
+                            Q2 += ' password = ' + mysql.escape(hash2) + ' , ';
+                            Q2 += ' salt = ' + mysql.escape(salt2);
+                            Q2 += ' WHERE idEXPERT_USER= ' + mysql.escape(req.user.idEXPERT_USER);
+                            app.conn.query(Q2, (err2, result2) => {
+                                if (err2)
+                                    res.status(500).send(err1);
+                                else
+                                    res.status(200).send(result2);
+                            });
+                        });
+                    }
+                    else {
+                        res.status(401).send(err1);
+                    }
+                });
+            }
+        });
+    });
     router.get("/job/confirm/:idEXPERT_USER/:idJOBS", ensureAuthenticated, (req, res) => {
         let Q1 = ' SELECT email FROM EXPERT_USER '
             + ' WHERE idEXPERT_USER = ' + mysql.escape(req.params.idEXPERT_USER);
@@ -360,6 +397,76 @@ module.exports = function (app) {
                         res.status(200).redirect(config.frontDomain + '/login-panel/confirm/job');
                     }
                 });
+            }
+        });
+    });
+    router.post("/email", (req, res) => {
+        let Q = ' SELECT email, password_q FROM EXPERT_USER ';
+        Q += ' WHERE name = ' + mysql.escape(req.body.name);
+        let birth = new Date(req.body.birthday);
+        let birthString = [
+            birth.getFullYear(),
+            birth.getMonth() + 1,
+            birth.getDate().toString().length === 1 ? '0' + birth.getDate().toString() : birth.getDate()
+        ].join('-');
+        Q += ' AND birth = ' + mysql.escape(birthString);
+        Q += ' AND phone = ' + mysql.escape(req.body.phone);
+        Q += ' AND idJOBS = ' + mysql.escape(req.body.job);
+        Q += ' AND idDEPT = ' + mysql.escape(req.body.dept);
+        app.conn.query(Q, (err, result) => {
+            if (err) {
+                res.status(500).send(err);
+                console.log(err);
+            }
+            else {
+                res.status(200).send(result);
+            }
+        });
+    });
+    router.post("/password", (req, res) => {
+        let Q = ' SELECT idEXPERT_USER, password_a, password_q ';
+        Q += ' FROM EXPERT_USER ';
+        Q += ' WHERE email= ' + mysql.escape(req.body.email);
+        Q += ' AND password_a = ' + mysql.escape(req.body.password_a);
+        Q += ' AND password_q = ' + mysql.escape(req.body.password_q);
+        app.conn.query(Q, (err, result) => {
+            if (err) {
+                res.status(500).send(err);
+                console.log(err);
+            }
+            else {
+                if (result.length === 0) {
+                    res.status(200).send(false);
+                }
+                else {
+                    let newPassword = passwdGen.generate({
+                        length: 10,
+                        numbers: true,
+                    });
+                    if (result[0].password_a == req.body.password_a && result[0].password_q == req.body.password_q) {
+                        hasher({ password: newPassword }, (err, pass, salt, hash) => {
+                            let Q2 = ' UPDATE EXPERT_USER SET ';
+                            Q2 += ' password = ' + mysql.escape(hash) + ' , ';
+                            Q2 += ' salt = ' + mysql.escape(salt);
+                            Q2 += ' WHERE idEXPERT_USER = ' + mysql.escape(result[0].idEXPERT_USER);
+                            app.conn.query(Q2, (err2, result2) => {
+                                if (err2) {
+                                    res.status(500).send(err2);
+                                    console.log(err2);
+                                }
+                                else {
+                                    let html = new html_service_1.HTMLtoStringService('매일마음관리 웹페이지 비밀번호가 변경되었습니다.', result[0].email);
+                                    let opt = [
+                                        config.fullDomain + '/img/dmhc_logo',
+                                        newPassword
+                                    ];
+                                    html.getConfirmEmailString2('./assets/mail-schematic/new-password.html', opt);
+                                    res.status(200).send(true);
+                                }
+                            });
+                        });
+                    }
+                }
             }
         });
     });
