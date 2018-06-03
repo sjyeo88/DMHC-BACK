@@ -1429,13 +1429,22 @@ module.exports = function (app) {
                 res.status(500).send(err);
             }
             else {
-                let url = config.domain + '/mobile/api/data/assign/now/' + req.params.idPATIENT_USER;
-                request(url, (err, Response, body) => {
+                let Q2 = " DELETE FROM SBJTS WHERE idPATIENT_USER = " + mysql.escape(req.params.idPATIENT_USER);
+                app.conn.query(Q2, (err, result) => {
                     if (err) {
+                        console.log(err);
                         res.status(500).send(err);
                     }
                     else {
-                        res.status(200).send(result);
+                        let url = config.domain + '/mobile/api/data/assign/now/' + req.params.idPATIENT_USER;
+                        request(url, (err, Response, body) => {
+                            if (err) {
+                                res.status(500).send(err);
+                            }
+                            else {
+                                res.status(200).send(result);
+                            }
+                        });
                     }
                 });
             }
