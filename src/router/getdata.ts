@@ -1690,6 +1690,7 @@ app.conn.query(Q, (err, result)=>{
               if (err) { console.log(err); res.status(500).send(err); }
               else {
                 let url = config.domain + '/mobile/api/data/assign/now/' + req.params.idPATIENT_USER
+                console.log(url);
                 request(url, (err, Response, body) => {
                   if(err) {res.status(500).send(err)}
                   else {
